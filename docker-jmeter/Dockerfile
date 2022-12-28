@@ -1,10 +1,10 @@
 # inspired by https://github.com/hauptmedia/docker-jmeter  and
 # https://github.com/hhcordero/docker-jmeter-server/blob/master/Dockerfile
-FROM alpine:3.8
+FROM alpine:3.17
 
 MAINTAINER Just van den Broecke<just@justobjects.nl>
 
-ARG JMETER_VERSION="4.0"
+ARG JMETER_VERSION="5.4.1"
 ENV JMETER_HOME /opt/apache-jmeter-${JMETER_VERSION}
 ENV	JMETER_BIN	${JMETER_HOME}/bin
 ENV	JMETER_DOWNLOAD_URL  https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
@@ -14,14 +14,25 @@ ENV	JMETER_DOWNLOAD_URL  https://archive.apache.org/dist/jmeter/binaries/apache-
 # Change TimeZone TODO: TZ still is not set!
 ARG TZ="IMAGE_TIMEZONE"
 
-RUN echo "http://dl-4.alpinelinux.org/alpine/v3.4/main" >> /etc/apk/repositories && \
-    echo "http://dl-4.alpinelinux.org/alpine/v3.4/community" >> /etc/apk/repositories
+#RUN echo "http://dl-4.alpinelinux.org/alpine/v3.4/main" >> /etc/apk/repositories && \
+#    echo "http://dl-4.alpinelinux.org/alpine/v3.4/community" >> /etc/apk/repositories
+
+RUN echo http://repository.fit.cvut.cz/mirrors/alpine/v3.17/main > /etc/apk/repositories; \
+    echo http://repository.fit.cvut.cz/mirrors/alpine/v3.17/community >> /etc/apk/repositories
+
+#COPY pub/pub /usr/local/share/ca-certificates/my-cert.crt
+
+#RUN cat /usr/local/share/ca-certificates/my-cert.crt >> /etc/ssl/certs/ca-certificates.crt 
+#RUN  apk --no-cache add
+#RUN  curl
+
+# atk-bridge-2.0
 
 RUN    apk update \
 	&& apk upgrade \
 	&& apk add ca-certificates \
 	&& update-ca-certificates \
-	&& apk add --update openjdk8-jre tzdata curl unzip bash cups-libs atk at-spi2-atk pango \
+	&& apk add --update openjdk11-jre tzdata curl unzip bash cups-libs pango \
 	&& rm -rf /var/cache/apk/* \
 	&& mkdir -p /tmp/dependencies  \
 	&& curl -L --silent ${JMETER_DOWNLOAD_URL} >  /tmp/dependencies/apache-jmeter-${JMETER_VERSION}.tgz  \
@@ -30,7 +41,7 @@ RUN    apk update \
 	&& rm -rf /tmp/dependencies 
 
 RUN apk update && \
-	apk add python py-pip curl unzip libexif udev chromium chromium-chromedriver xvfb && \
+	apk add python3 py-pip curl unzip libexif udev chromium chromium-chromedriver xvfb && \
 	pip install selenium && \
 	pip install pyvirtualdisplay
 
@@ -38,7 +49,7 @@ RUN apk update && \
 RUN rm -rf /var/cache/apk/*
 
 RUN curl -L https://jmeter-plugins.org/get/ > ${JMETER_HOME}/lib/ext/plugins-manager.jar
-RUN curl -L http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar > ${JMETER_HOME}/lib/cmdrunner-2.2.jar
+RUN curl -L http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar > ${JMETER_HOME}/lib/cmdrunner-2.3.jar
 RUN java -cp ${JMETER_HOME}/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
 RUN ${JMETER_HOME}/bin/PluginsManagerCMD.sh install jpgc-autostop,jpgc-casutg,jpgc-csl,jpgc-dummy,jpgc-ffw,jpgc-filterresults,jpgc-functions,jpgc-json,jpgc-mergeresults,jpgc-prmctl,jpgc-sense,jpgc-tst,jpgc-wsc
 
@@ -91,8 +102,12 @@ COPY lib/selenium-firefox-driver-3.14.0.jar ${JMETER_HOME}/lib/selenium-firefox-
 COPY lib/selenium-ie-driver-3.14.0.jar ${JMETER_HOME}/lib/selenium-ie-driver-3.14.0.jar
 COPY lib/selenium-java-3.14.0.jar ${JMETER_HOME}/lib/selenium-java-3.14.0.jar
 COPY lib/selenium-remote-driver-3.14.0.jar ${JMETER_HOME}/lib/selenium-remote-driver-3.14.0.jar
-COPY lib/selenium-support-3.14.0.jar ${JMETER_HOME}/lib/selenium-support-3.14.0.jar
+COPY lib/selenium-support-3.14.0.jar		 ${JMETER_HOME}/lib/selenium-support-3.14.0.jar
+COPY lib/ext/jmeter-plugins-autostop-0.1.jar		 ${JMETER_HOME}/lib/ext/jmeter-plugins-autostop-0.1.jar
 COPY lib/chromedriver ${JMETER_HOME}/lib/chromedriver
+COPY lib/ojdbc10.jar ${JMETER_HOME}/lib/ojdbc10.jar
+COPY lib/ext/json2svg-1.0-SNAPSHOT.jar ${JMETER_HOME}/lib/ext/json2svg-1.0-SNAPSHOT.jar
+
 
 RUN chmod 777 ${JMETER_HOME}/lib/chromedriver
 
